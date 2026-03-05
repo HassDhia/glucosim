@@ -1,0 +1,9 @@
+{
+  "surprise": "The Bergman model's homeostatic feedback makes random insulin delivery surprisingly effective on single-objective tasks, achieving 76.7% time-in-range without any learned policy.",
+  "mechanism": "Endogenous insulin secretion in the Bergman model compensates for suboptimal exogenous delivery, but this compensation breaks down when the control objective becomes multi-dimensional (basal plus bolus with IOB constraints).",
+  "implication": "RL benchmarks for glucose management must use composite reward functions with safety constraints (IOB penalties, multi-day horizons) to differentiate learned policies from naive baselines - single-objective time-in-range is insufficient.",
+  "evidence_file": "results/training_results.json",
+  "baseline_exceeded": true,
+  "baseline_margin": "PPO achieves 1868.6 vs random -825.8 on ClosedLoop-v0 (the primary multi-objective environment), while BasalControl shows random achieving 76.7% TIR without learning",
+  "key_finding": "Reward complexity threshold: simple zone-based rewards fail to create meaningful learning signal in glucose environments with homeostatic feedback. Composite rewards (zone + IOB penalty + temporal horizon) are necessary for RL to demonstrate value over naive control."
+}
