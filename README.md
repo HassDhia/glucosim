@@ -4,7 +4,7 @@
 
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Tests](https://img.shields.io/badge/tests-120%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-117%20passing-brightgreen.svg)
 [![PyPI version](https://img.shields.io/pypi/v/glucosim.svg)](https://pypi.org/project/glucosim/)
 
 ---
