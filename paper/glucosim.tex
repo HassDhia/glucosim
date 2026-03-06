@@ -112,7 +112,7 @@ The Bergman minimal model~\citep{bergman1979quantitative} describes glucose-insu
 
 where $G$ is plasma glucose (mg/dL), $X$ is remote insulin action (min$^{-1}$), $I$ is plasma insulin (mU/L), $D(t)$ is glucose appearance from meals, and $u(t)$ is exogenous insulin input. Default adult parameters are $p_1 = 0.028$, $p_2 = 0.025$, $p_3 = 1.3 \times 10^{-5}$, $n = 0.23$, $\gamma = 0.004$, with basal values $G_b = 110$ mg/dL and $I_b = 15$ mU/L. Integration uses fourth-order Runge-Kutta with a 1-minute time step.
 
-A critical property of this model is homeostatic feedback: the endogenous insulin secretion term $\gamma \cdot \max(0, G - h)$ in Equation~\ref{eq:insulin} actively counteracts hyperglycemia. This built-in regulation has important implications for RL benchmarking, as we demonstrate in Section~\ref{sec:results}.
+A critical property of this model is homeostatic feedback: the endogenous insulin secretion term $\gamma \cdot \max(0, G - h)$ in Equation~\ref{eq:insulin} actively counteracts hyperglycemia. With the default $\gamma = 0.004$, this models residual beta-cell function rather than complete T1D (where $\gamma \approx 0$). We retain the nonzero default as it is standard in the Bergman model literature, but note that setting $\gamma = 0$ via patient configuration would model fully insulin-dependent T1D and likely increase the difficulty of all environments. This built-in regulation has important implications for RL benchmarking, as we demonstrate in Section~\ref{sec:results}.
 
 \subsection{Meal Absorption Model}
 
@@ -232,7 +232,9 @@ Two concrete limitations bound the generalizability of these results:
 
 GlucoSim provides a standardized, open-source platform for evaluating RL algorithms on glucose management tasks. Our experiments reveal that multi-objective glucose management environments with safety constraints produce the strongest separation between learned and naive policies, with PPO outperforming random baselines on both BolusAdvisor and ClosedLoop while the basal-only environment shows minimal separation due to homeostatic model feedback. The package is available on PyPI (\texttt{pip install glucosim}) and GitHub under the MIT license with 117 passing tests.
 
-Future work includes: (1) implementing the full UVA/Padova 2014 model with subcutaneous insulin absorption delays, (2) adding dual-hormone control (insulin + glucagon), (3) integrating continuous reward functions based on the Magni risk index, and (4) supporting multi-patient transfer learning benchmarks.
+Future work includes: (1) implementing the full UVA/Padova 2014 model with subcutaneous insulin absorption delays, (2) adding a $\gamma = 0$ configuration for fully insulin-dependent T1D, (3) adding dual-hormone control (insulin + glucagon), (4) integrating continuous reward functions based on the Magni risk index, and (5) supporting multi-patient transfer learning benchmarks.
+
+\textbf{Clinical disclaimer.} GlucoSim is a research benchmark only. The Bergman minimal model simplifications (instantaneous insulin absorption, residual beta-cell function, simplified IOB tracking) make policies trained here unsuitable for clinical insulin dosing. GlucoSim should not be used for medical decision-making.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
