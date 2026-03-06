@@ -1,9 +1,9 @@
 {
-  "surprise": "The Bergman model's homeostatic feedback makes random insulin delivery surprisingly effective on basal-only tasks (76.7% TIR), but PPO outperforms random on BolusAdvisor (1324.4 vs 568.4) and ClosedLoop (1868.6 vs -825.8).",
-  "mechanism": "Endogenous insulin secretion in the Bergman model compensates for suboptimal exogenous delivery on simple basal tasks, but this compensation is insufficient for meal bolus timing and multi-objective constraints with IOB penalties.",
-  "implication": "Multi-objective glucose management environments with safety constraints produce the strongest separation between learned and naive policies, establishing a gradient of benchmark difficulty.",
+  "surprise": "Fixing the Bergman model equilibrium (clearance on I-Ib, h=Gb) removed artificial homeostatic compensation, making PPO outperform random on ALL three environments -- previously random matched or beat PPO on BasalControl.",
+  "mechanism": "The original model had dI=-n*I at basal state, causing insulin to drift from equilibrium. With dI=-n*(I-Ib) and h=Gb, the model is truly at equilibrium without exogenous insulin, making random control much less effective and revealing clear RL signal across all environments.",
+  "implication": "Model equilibrium correctness is critical for RL benchmark validity. Artificial homeostatic compensation can mask the learning signal, making random baselines appear unreasonably strong.",
   "evidence_file": "results/training_results.json",
   "baseline_exceeded": true,
-  "baseline_margin": "PPO achieves 1868.6 vs random -825.8 on ClosedLoop-v0, and 1324.4 vs 568.4 on BolusAdvisor-v0. BasalControl shows minimal separation (780.4 vs 913.0).",
-  "key_finding": "Benchmark difficulty gradient: basal-only environments show least separation between random and learned policies, bolus environments show moderate separation, and full closed-loop with safety constraints shows the strongest signal."
+  "baseline_margin": "PPO achieves 921.5 vs random 74.3 on BasalControl, 1101.6 vs -40.7 on BolusAdvisor, 1822.5 vs -3324.3 on ClosedLoop. PPO outperforms on all three environments.",
+  "key_finding": "After equilibrium fix, PPO consistently outperforms random across all environments with increasing advantage: BasalControl (12.4x), BolusAdvisor (27.1x), ClosedLoop (most dramatic absolute separation). The difficulty gradient is preserved but with much stronger signal."
 }

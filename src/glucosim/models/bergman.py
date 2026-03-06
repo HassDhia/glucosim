@@ -16,7 +16,7 @@ DEFAULT_PARAMS: dict[str, float] = {
     "p3": 0.000013,    # insulin action gain (min^-2 per mU/L)
     "n": 0.23,         # insulin clearance rate (min^-1)
     "gamma": 0.004,    # pancreatic responsivity (mU/L/min per mg/dL)
-    "h": 105.0,        # glucose threshold for insulin secretion (mg/dL)
+    "h": 110.0,        # glucose threshold for insulin secretion (mg/dL)
     "Gb": 110.0,       # basal glucose (mg/dL)
     "Ib": 15.0,        # basal insulin (mU/L)
     "VG": 1.49,        # glucose distribution volume (dL/kg)
@@ -90,10 +90,11 @@ class BergmanModel:
         dX = -p["p2"] * X + p["p3"] * (I - p["Ib"])
 
         # Insulin dynamics with endogenous secretion
-        # SIMPLIFICATION: Using max(0, G-h) for secretion threshold.
-        # Clinical models use more complex sigmoid secretion curves.
+        # Clearance acts on deviation from basal (I - Ib), so at basal state
+        # dI = 0 when G <= h. Basal insulin is maintained by background
+        # secretion implicit in the Ib term.
         secretion = p["gamma"] * max(0.0, G - p["h"])
-        dI = -p["n"] * I + secretion + insulin_input
+        dI = -p["n"] * (I - p["Ib"]) + secretion + insulin_input
 
         return np.array([dG, dX, dI])
 

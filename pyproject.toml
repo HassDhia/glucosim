@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "glucosim"
-version = "0.1.1"
+version = "0.1.2"
 description = "Gymnasium environments for reinforcement learning in glucose management"
 readme = "README.md"
 license = "MIT"

@@ -19,7 +19,7 @@
 
 % ========================================================================
 \begin{abstract}
-We present GlucoSim, an open-source platform providing three Gymnasium-compatible reinforcement learning environments for Type 1 diabetes glucose management: basal rate optimization (BasalControl), meal bolus dosing (BolusAdvisor), and full closed-loop insulin delivery (ClosedLoop). GlucoSim implements the Bergman minimal glucose-insulin model with RK4 integration, a Dalla Man two-compartment gut absorption model, a CGM sensor noise model with configurable lag and noise, and a virtual patient generator producing 30 patients across three age groups with $\pm$20\% parameter variability. We train PPO agents against random and clinical heuristic baselines across three difficulty levels and three patient age groups, organized into a five-tier benchmark suite. Our key finding is that the Bergman model's endogenous homeostatic feedback makes random insulin delivery surprisingly effective on the basal-only environment (76.7\% time-in-range), but PPO outperforms random baselines on both BolusAdvisor (1324.4 vs. 568.4 mean reward) and ClosedLoop (1868.6 vs. $-$825.8), with the advantage most pronounced on the multi-objective ClosedLoop task. This demonstrates that glucose management RL benchmarks with composite reward functions and safety constraints create the strongest signal for differentiating learned policies from naive baselines. GlucoSim ships with 117 tests, trained PPO baselines, and is available on PyPI and GitHub under the MIT license.
+We present GlucoSim, an open-source platform providing three Gymnasium-compatible reinforcement learning environments for Type 1 diabetes glucose management: basal rate optimization (BasalControl), meal bolus dosing (BolusAdvisor), and full closed-loop insulin delivery (ClosedLoop). GlucoSim implements the Bergman minimal glucose-insulin model with RK4 integration and verified equilibrium at basal conditions, a Dalla Man two-compartment gut absorption model, a CGM sensor noise model with configurable lag and noise, and a virtual patient generator producing 30 patients across three age groups with $\pm$20\% parameter variability. We train PPO agents against random and clinical heuristic baselines across three difficulty levels and three patient age groups, organized into a five-tier benchmark suite. PPO outperforms random baselines on all three environments with increasing advantage: BasalControl (921.5 vs. 74.3 mean reward), BolusAdvisor (1101.6 vs. $-$40.7), and ClosedLoop (1822.5 vs. $-$3324.3). The difficulty gradient from basal through closed-loop creates progressively stronger separation between learned and naive policies. GlucoSim ships with 117 tests, trained PPO baselines, and is available on PyPI and GitHub under the MIT license.
 \end{abstract}
 
 % ========================================================================
@@ -35,7 +35,7 @@ GlucoSim addresses this gap with three contributions:
 \begin{enumerate}
     \item Three Gymnasium-compatible environments spanning basal control, bolus dosing, and full closed-loop delivery, each with easy/medium/hard difficulty tiers and three patient age groups.
     \item A modular simulation stack combining the Bergman minimal model~\citep{bergman1979quantitative}, Dalla Man gut absorption~\citep{dallaman2007meal}, CGM sensor noise, and 30 virtual patients with realistic inter-patient variability.
-    \item An empirical finding that single-objective zone-based rewards are insufficient for meaningful RL benchmarking in glucose management due to the Bergman model's homeostatic feedback, establishing that composite rewards with safety constraints are necessary.
+    \item An empirical demonstration that model equilibrium correctness is essential for valid RL benchmarking, with PPO outperforming random on all environments when the Bergman model is properly parameterized, and a difficulty gradient that increases from basal through closed-loop control.
 \end{enumerate}
 
 % ========================================================================
@@ -107,10 +107,10 @@ The Bergman minimal model~\citep{bergman1979quantitative} describes glucose-insu
 \begin{align}
 \frac{dG}{dt} &= -(p_1 + X(t)) \cdot G(t) + p_1 \cdot G_b + D(t) \label{eq:glucose} \\
 \frac{dX}{dt} &= -p_2 \cdot X(t) + p_3 \cdot (I(t) - I_b) \label{eq:insulin_action} \\
-\frac{dI}{dt} &= -n \cdot I(t) + \gamma \cdot \max(0, G(t) - h) + u(t) \label{eq:insulin}
+\frac{dI}{dt} &= -n \cdot (I(t) - I_b) + \gamma \cdot \max(0, G(t) - h) + u(t) \label{eq:insulin}
 \end{align}
 
-where $G$ is plasma glucose (mg/dL), $X$ is remote insulin action (min$^{-1}$), $I$ is plasma insulin (mU/L), $D(t)$ is glucose appearance from meals, and $u(t)$ is exogenous insulin input. Default adult parameters are $p_1 = 0.028$, $p_2 = 0.025$, $p_3 = 1.3 \times 10^{-5}$, $n = 0.23$, $\gamma = 0.004$, with basal values $G_b = 110$ mg/dL and $I_b = 15$ mU/L. Integration uses fourth-order Runge-Kutta with a 1-minute time step.
+where $G$ is plasma glucose (mg/dL), $X$ is remote insulin action (min$^{-1}$), $I$ is plasma insulin (mU/L), $D(t)$ is glucose appearance from meals, and $u(t)$ is exogenous insulin input. Default adult parameters are $p_1 = 0.028$, $p_2 = 0.025$, $p_3 = 1.3 \times 10^{-5}$, $n = 0.23$, $\gamma = 0.004$, $h = G_b = 110$ mg/dL, and $I_b = 15$ mU/L. The insulin clearance term $-n(I - I_b)$ ensures that the system is at equilibrium when $G = G_b$, $X = 0$, and $I = I_b$ with no exogenous input, since the secretion term $\gamma \max(0, G_b - h) = 0$ when $h = G_b$. Integration uses fourth-order Runge-Kutta with a 1-minute time step.
 
 A critical property of this model is homeostatic feedback: the endogenous insulin secretion term $\gamma \cdot \max(0, G - h)$ in Equation~\ref{eq:insulin} actively counteracts hyperglycemia. With the default $\gamma = 0.004$, this models residual beta-cell function rather than complete T1D (where $\gamma \approx 0$). We retain the nonzero default as it is standard in the Bergman model literature, but note that setting $\gamma = 0$ via patient configuration would model fully insulin-dependent T1D and likely increase the difficulty of all environments. This built-in regulation has important implications for RL benchmarking, as we demonstrate in Section~\ref{sec:results}.
 
@@ -165,23 +165,23 @@ Table~\ref{tab:results} summarizes the performance of all agents across the thre
 
 \begin{table}[h]
 \centering
-\caption{Agent performance across GlucoSim environments. PPO achieves its strongest advantage on ClosedLoop-v0, the most clinically relevant multi-objective environment. On simpler single-objective environments, the Bergman model's homeostatic feedback enables random control to achieve surprisingly high time-in-range, limiting the margin for learned policies.}
+\caption{Agent performance across GlucoSim environments. PPO outperforms random on all three environments, with the advantage increasing from BasalControl through ClosedLoop. The equilibrium-correct Bergman model (clearance on $I - I_b$, $h = G_b$) eliminates artificial homeostatic compensation, producing clear RL signal across all environments.}
 \label{tab:results}
 \begin{tabular}{llccc}
 \toprule
 Environment & Agent & Mean Reward & Std & TIR (\%) \\
 \midrule
-BasalControl-v0 & Random & 913.0 & 424.9 & 76.7 \\
- & Heuristic & 1085.8 & 61.6 & 85.6 \\
- & PPO & 780.4 & 147.8 & 73.9 \\
+BasalControl-v0 & Random & 74.3 & 756.1 & 49.1 \\
+ & Heuristic & 936.3 & 385.9 & 77.8 \\
+ & PPO & 921.5 & 76.9 & 79.4 \\
 \midrule
-BolusAdvisor-v0 & Random & 568.4 & 775.5 & 75.3 \\
- & Heuristic & 1056.7 & 182.2 & 82.4 \\
- & PPO & 1324.4 & 222.5 & 87.3 \\
+BolusAdvisor-v0 & Random & $-$40.7 & 1000.3 & 53.3 \\
+ & Heuristic & 1036.3 & 417.7 & 73.4 \\
+ & PPO & 1101.6 & 451.9 & 74.4 \\
 \midrule
-ClosedLoop-v0 & Random & $-$825.8 & 1943.2 & 55.6 \\
- & Heuristic & 1841.2 & 893.1 & 76.9 \\
- & PPO & 1868.6 & 213.2 & 80.0 \\
+ClosedLoop-v0 & Random & $-$3324.3 & 1826.6 & 30.2 \\
+ & Heuristic & 842.4 & 1177.1 & 53.3 \\
+ & PPO & 1822.5 & 146.5 & 79.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,34 +189,34 @@ ClosedLoop-v0 & Random & $-$825.8 & 1943.2 & 55.6 \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/baseline_comparison.png}
-\caption{Reward comparison across all three GlucoSim environments. PPO outperforms random on BolusAdvisor (1324.4 vs. 568.4) and ClosedLoop (1868.6 vs. $-$825.8). The ClosedLoop advantage is driven by the IOB stacking penalty that punishes uncontrolled insulin delivery over the 48-hour episode. On BasalControl, the Bergman model's endogenous secretion partially compensates for random insulin inputs.}
+\caption{Reward comparison across all three GlucoSim environments. PPO outperforms random on all environments: BasalControl (921.5 vs. 74.3), BolusAdvisor (1101.6 vs. $-$40.7), and ClosedLoop (1822.5 vs. $-$3324.3). The advantage grows with environment complexity, with ClosedLoop showing the most dramatic separation due to the 48-hour horizon and IOB stacking penalty.}
 \label{fig:baseline}
 \end{figure}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/time_in_range.png}
-\caption{Time-in-range (70--180 mg/dL) across environments. On BasalControl, random control achieves 76.7\% TIR, exceeding the 70\% clinical consensus target (green dashed line). On BolusAdvisor, PPO achieves 87.3\% TIR versus 75.3\% for random. On ClosedLoop, random TIR drops to 55.6\% while PPO maintains 80.0\%, demonstrating that multi-objective environments with longer horizons and safety constraints produce the strongest separation between learned and naive control.}
+\caption{Time-in-range (70--180 mg/dL) across environments. With the equilibrium-correct model, random control fails to reach the 70\% clinical target (green dashed line) on any environment. PPO exceeds the target on BasalControl (79.4\%) and ClosedLoop (79.0\%), and approaches it on BolusAdvisor (74.4\%). Random TIR degrades from 49.1\% (BasalControl) to 30.2\% (ClosedLoop), showing clear difficulty progression.}
 \label{fig:tir}
 \end{figure}
 
-On BasalControl-v0, random insulin delivery achieves 76.7\% time-in-range, exceeding the 70\% clinical consensus target without any learning. This occurs because the Bergman model's endogenous insulin secretion (Equation~\ref{eq:insulin}) partially compensates for suboptimal exogenous delivery. However, this compensation is insufficient on the more challenging environments: on BolusAdvisor-v0, PPO achieves 1324.4 mean reward versus 568.4 for random (87.3\% vs. 75.3\% TIR), and on ClosedLoop-v0, PPO achieves 1868.6 versus $-$825.8 for random.
+PPO outperforms random baselines on all three environments. On BasalControl-v0, PPO achieves 921.5 mean reward versus 74.3 for random (79.4\% vs. 49.1\% TIR). On BolusAdvisor-v0, PPO achieves 1101.6 versus $-$40.7 (74.4\% vs. 53.3\% TIR). On ClosedLoop-v0, PPO achieves 1822.5 versus $-$3324.3 (79.0\% vs. 30.2\% TIR). Random control fails to reach the 70\% clinical TIR target on any environment, confirming that the equilibrium-correct model eliminates the artificial homeostatic compensation that previously inflated random baseline performance.
 
-The ClosedLoop result is particularly striking: the 48-hour horizon, combined with the IOB stacking penalty, creates a multi-objective challenge where random control scores strongly negative while PPO achieves strongly positive rewards. PPO also outperforms the clinical heuristic baseline on ClosedLoop (1868.6 vs. 1841.2) while achieving lower variance (213.2 vs. 893.1 standard deviation).
+The ClosedLoop result is particularly striking: the 48-hour horizon combined with the IOB stacking penalty creates a multi-objective challenge where random control scores strongly negative ($-$3324.3) while PPO achieves strongly positive rewards (1822.5). PPO also dramatically outperforms the clinical heuristic on ClosedLoop (1822.5 vs. 842.4) with much lower variance (146.5 vs. 1177.1 standard deviation), suggesting that the learned policy discovers a safer and more consistent insulin delivery strategy than the proportional controller.
 
-These results establish a gradient of benchmark difficulty: basal-only environments with zone-based rewards show the least separation between random and learned policies, bolus environments show moderate separation, and the full closed-loop environment with safety constraints shows the strongest signal for distinguishing RL controllers from naive baselines.
+These results establish a clear difficulty gradient: the absolute separation between PPO and random grows from BasalControl (847 reward gap) through BolusAdvisor (1142 gap) to ClosedLoop (5147 gap), with the multi-objective environment providing the strongest benchmark signal.
 
 % ========================================================================
 \section{Discussion and Limitations}
 
 \textbf{What did we expect vs. what actually happened?}
-We expected PPO to outperform random baselines across all three environments. PPO underperformed random on BasalControl (780.4 vs. 913.0) but outperformed on BolusAdvisor (1324.4 vs. 568.4) and dramatically outperformed on ClosedLoop (1868.6 vs. $-$825.8). The BasalControl result reveals a property of the Bergman model: homeostatic feedback creates a ``floor'' of acceptable performance on basal-only tasks that random policies can access, while meal bolus and closed-loop tasks require learned control.
+We expected PPO to outperform random baselines across all three environments, and this is confirmed. PPO outperforms random on BasalControl (921.5 vs. 74.3), BolusAdvisor (1101.6 vs. $-$40.7), and ClosedLoop (1822.5 vs. $-$3324.3). Critically, the equilibrium-correct Bergman model (insulin clearance on $I - I_b$ with $h = G_b$) ensures the model is truly at rest without exogenous input, eliminating the artificial homeostatic compensation that inflated random performance in earlier experiments with the original parameterization.
 
 \textbf{What does this mean for the field?}
-This finding complements Ngo et al.~\citep{ngo2025safe}'s work on safe RL controllers by establishing that safety constraints strengthen the learning signal: while PPO outperforms random on both BolusAdvisor and ClosedLoop, the advantage is most pronounced on the multi-objective ClosedLoop environment with IOB penalties. Future benchmarks should use composite rewards that include IOB penalties, multi-day horizons, and hypoglycemia severity weighting to maximize signal separation.
+This finding highlights the importance of model equilibrium correctness for RL benchmarking. A model that is not at equilibrium at initialization implicitly provides free insulin clearance that benefits random policies, masking the RL signal. Our corrected model complements Ngo et al.~\citep{ngo2025safe}'s work on safe RL controllers by demonstrating that PPO advantage increases with environment complexity, from 12.4x reward ratio on BasalControl to the most dramatic absolute separation on ClosedLoop.
 
 \textbf{What would change our conclusions?}
-If future work demonstrates that PPO with reward shaping (e.g., continuous glucose penalty functions rather than zone-based rewards) significantly outperforms random on basal-only environments, our conclusion about the limited signal from basal-only zone-based rewards would need revision. Additionally, if more physiologically complex models (e.g., the full UVA/Padova 2014 model) show less homeostatic compensation, the reward complexity threshold may shift.
+If more physiologically complex models (e.g., the full UVA/Padova 2014 model with subcutaneous absorption delays) show different difficulty gradients, or if alternative RL algorithms (SAC, TD3) substantially outperform PPO, the specific benchmark rankings may shift. However, the core finding that equilibrium-correct models are necessary for valid RL benchmarking should generalize.
 
 \textbf{Limitations.}
 Two concrete limitations bound the generalizability of these results:
@@ -224,13 +224,13 @@ Two concrete limitations bound the generalizability of these results:
 \begin{enumerate}
     \item \textbf{Model fidelity.} The Bergman minimal model uses three ODEs versus the 13+ equations in the full UVA/Padova model~\citep{dallaman2014uvapadova}. Notably, we model insulin delivery as instantaneous absorption rather than the 60--90 minute subcutaneous absorption delay of rapid-acting insulin analogs. This simplification likely makes control easier than clinical reality, inflating baseline performance. We estimate this accounts for 10--20\% of the random baseline's TIR advantage.
 
-    \item \textbf{Training budget.} PPO was trained for 300K--500K steps, which may be insufficient for the 1440--2880 step episodes in GlucoSim. The PPO/random comparison on BasalControl likely reflects an undertrained policy rather than a fundamental limitation of RL. With 10$\times$ more training budget and curriculum learning, PPO performance on BasalControl may improve substantially.
+    \item \textbf{Training budget.} PPO was trained for 300K--450K steps, which may be insufficient for the 1440--2880 step episodes in GlucoSim. With 10$\times$ more training budget and curriculum learning, PPO performance may improve substantially across all environments.
 \end{enumerate}
 
 % ========================================================================
 \section{Conclusion and Future Work}
 
-GlucoSim provides a standardized, open-source platform for evaluating RL algorithms on glucose management tasks. Our experiments reveal that multi-objective glucose management environments with safety constraints produce the strongest separation between learned and naive policies, with PPO outperforming random baselines on both BolusAdvisor and ClosedLoop while the basal-only environment shows minimal separation due to homeostatic model feedback. The package is available on PyPI (\texttt{pip install glucosim}) and GitHub under the MIT license with 117 passing tests.
+GlucoSim provides a standardized, open-source platform for evaluating RL algorithms on glucose management tasks. With an equilibrium-correct Bergman model, PPO outperforms random baselines on all three environments with increasing advantage, establishing a clear difficulty gradient from basal control through closed-loop delivery. The package is available on PyPI (\texttt{pip install glucosim}) and GitHub under the MIT license with 117 passing tests.
 
 Future work includes: (1) implementing the full UVA/Padova 2014 model with subcutaneous insulin absorption delays, (2) adding a $\gamma = 0$ configuration for fully insulin-dependent T1D, (3) adding dual-hormone control (insulin + glucagon), (4) integrating continuous reward functions based on the Magni risk index, and (5) supporting multi-patient transfer learning benchmarks.
 
