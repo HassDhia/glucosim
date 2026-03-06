@@ -94,6 +94,8 @@ class BolusAdvisorEnv(gym.Env):
         self._meal_announced: bool = False
         self._meal_carbs: float = 0.0
         self._last_meal_time: int = -480
+        self._bolus_remaining: float = 0.0
+        self._bolus_duration: int = 5
 
     def _build_meal_schedule(self, rng: np.random.Generator) -> list[tuple[int, float]]:
         meals = []
@@ -136,6 +138,7 @@ class BolusAdvisorEnv(gym.Env):
         self._meal_announced = False
         self._meal_carbs = 0.0
         self._last_meal_time = -480
+        self._bolus_remaining = 0.0
 
         obs = self._get_obs()
         info = self._get_info()
@@ -158,8 +161,19 @@ class BolusAdvisorEnv(gym.Env):
                 self._meal_carbs = meal_carbs
                 self._last_meal_time = self._time
 
-        # Convert bolus to rate: apply bolus over 5 minutes
-        bolus_rate = bolus_dose * 12.0 if self._meal_announced else 0.0
+        # Queue bolus for delivery over 5 minutes (5 steps at 1-min resolution)
+        if self._meal_announced and bolus_dose > 0.0:
+            self._bolus_remaining = bolus_dose
+
+        # Deliver queued bolus evenly over remaining infusion steps
+        if self._bolus_remaining > 0.0:
+            per_min = self._bolus_remaining / self._bolus_duration
+            bolus_rate = per_min * 60.0  # U/min to U/hr for the model
+            self._bolus_remaining -= per_min
+            if self._bolus_remaining < 1e-6:
+                self._bolus_remaining = 0.0
+        else:
+            bolus_rate = 0.0
         total_rate = self.fixed_basal_rate + bolus_rate
 
         meal_rate = self._meal_model.step(dt=1.0)

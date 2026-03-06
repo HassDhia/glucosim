@@ -28,27 +28,27 @@
   "BolusAdvisor-v0": {
     "env_id": "glucosim/BolusAdvisor-v0",
     "random": {
-      "mean_reward": 1480.2,
-      "std_reward": 195.32,
-      "time_in_range": 0.905,
-      "n_episodes": 5
+      "mean_reward": 568.4,
+      "std_reward": 775.46,
+      "time_in_range": 0.753,
+      "n_episodes": 10
     },
     "heuristic": {
-      "mean_reward": 1127.9,
-      "std_reward": 174.92,
-      "time_in_range": 0.838,
-      "n_episodes": 5
+      "mean_reward": 1056.7,
+      "std_reward": 182.17,
+      "time_in_range": 0.824,
+      "n_episodes": 10
     },
     "ppo": {
-      "mean_reward": 1027.55,
-      "std_reward": 199.13,
-      "time_in_range": 0.819,
+      "mean_reward": 1324.35,
+      "std_reward": 222.46,
+      "time_in_range": 0.873,
       "n_episodes": 10,
       "training_steps": 300000,
-      "training_time_s": 64.4,
+      "training_time_s": 112.4,
       "model_path": "checkpoints/ppo_bolusadvisor"
     },
-    "ppo_vs_random_ratio": 0.69
+    "ppo_vs_random_ratio": 2.33
   },
   "ClosedLoop-v0": {
     "env_id": "glucosim/ClosedLoop-v0",
@@ -67,7 +67,7 @@
     "ppo": {
       "mean_reward": 1868.6,
       "std_reward": 213.23,
-      "time_in_range": 0.800,
+      "time_in_range": 0.8,
       "n_episodes": 10,
       "training_steps": 500000,
       "training_time_s": 122.7,

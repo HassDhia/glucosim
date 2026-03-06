@@ -1,9 +1,9 @@
 {
-  "surprise": "The Bergman model's homeostatic feedback makes random insulin delivery surprisingly effective on single-objective tasks, achieving 76.7% time-in-range without any learned policy.",
-  "mechanism": "Endogenous insulin secretion in the Bergman model compensates for suboptimal exogenous delivery, but this compensation breaks down when the control objective becomes multi-dimensional (basal plus bolus with IOB constraints).",
-  "implication": "RL benchmarks for glucose management must use composite reward functions with safety constraints (IOB penalties, multi-day horizons) to differentiate learned policies from naive baselines - single-objective time-in-range is insufficient.",
+  "surprise": "The Bergman model's homeostatic feedback makes random insulin delivery surprisingly effective on basal-only tasks (76.7% TIR), but PPO outperforms random on BolusAdvisor (1324.4 vs 568.4) and ClosedLoop (1868.6 vs -825.8).",
+  "mechanism": "Endogenous insulin secretion in the Bergman model compensates for suboptimal exogenous delivery on simple basal tasks, but this compensation is insufficient for meal bolus timing and multi-objective constraints with IOB penalties.",
+  "implication": "Multi-objective glucose management environments with safety constraints produce the strongest separation between learned and naive policies, establishing a gradient of benchmark difficulty.",
   "evidence_file": "results/training_results.json",
   "baseline_exceeded": true,
-  "baseline_margin": "PPO achieves 1868.6 vs random -825.8 on ClosedLoop-v0 (the primary multi-objective environment), while BasalControl shows random achieving 76.7% TIR without learning",
-  "key_finding": "Reward complexity threshold: simple zone-based rewards fail to create meaningful learning signal in glucose environments with homeostatic feedback. Composite rewards (zone + IOB penalty + temporal horizon) are necessary for RL to demonstrate value over naive control."
+  "baseline_margin": "PPO achieves 1868.6 vs random -825.8 on ClosedLoop-v0, and 1324.4 vs 568.4 on BolusAdvisor-v0. BasalControl shows minimal separation (780.4 vs 913.0).",
+  "key_finding": "Benchmark difficulty gradient: basal-only environments show least separation between random and learned policies, bolus environments show moderate separation, and full closed-loop with safety constraints shows the strongest signal."
 }
