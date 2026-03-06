@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
-
-import numpy as np
 
 
 def load_results(path: str = "results/training_results.json") -> dict[str, Any]:

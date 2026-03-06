@@ -6,8 +6,6 @@ ingested carbohydrates into a glucose appearance rate (Ra) over time.
 
 from __future__ import annotations
 
-import numpy as np
-
 # Default absorption parameters
 DEFAULT_MEAL_PARAMS: dict[str, float] = {
     "kgri": 0.0558,   # grinding rate (min^-1)

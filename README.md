@@ -9,7 +9,7 @@
 
 ---
 
-Three Gymnasium-compatible RL environments for Type 1 diabetes glucose management: basal rate optimization, meal bolus dosing, and full closed-loop insulin delivery control. Includes the Bergman minimal glucose-insulin model, Dalla Man gut absorption dynamics, a CGM sensor noise model, 30 virtual patients across three age groups (child, adolescent, adult), configurable difficulty tiers, heuristic clinical baselines, PPO RL agents, and a five-tier benchmark suite. 120 tests, MIT licensed.
+Three Gymnasium-compatible RL environments for Type 1 diabetes glucose management: basal rate optimization, meal bolus dosing, and full closed-loop insulin delivery control. Includes the Bergman minimal glucose-insulin model, Dalla Man gut absorption dynamics, a CGM sensor noise model, 30 virtual patients across three age groups (child, adolescent, adult), configurable difficulty tiers, heuristic clinical baselines, PPO RL agents, and a five-tier benchmark suite. 117 tests, MIT licensed.
 
 ## Installation
 

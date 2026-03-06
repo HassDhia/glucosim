@@ -70,6 +70,7 @@
       "training_steps": 450000,
       "model_path": "checkpoints/ppo_closedloop"
     },
-    "ppo_vs_random_ratio": 0.5482439648040911
+    "ppo_vs_random_ratio": 1.548243964804091,
+    "ppo_vs_random_ratio_note": "Absolute improvement ratio: abs(ppo - random) / abs(random). Simple ppo/random ratio is meaningless when random baseline is negative."
   }
 }

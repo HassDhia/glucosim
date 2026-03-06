@@ -172,7 +172,7 @@ class BasalControlEnv(gym.Env):
         # Sensor reading
         cgm = self._sensor.measure(result["glucose"], dt=1.0)
 
-        glucose_rate = cgm - self._prev_glucose
+        # Note: glucose rate of change could enhance observations in future versions
         self._prev_glucose = cgm
 
         self._time += 1
